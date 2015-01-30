@@ -1,17 +1,21 @@
-public final static int CACHE_SIZE = 999;
-Animation timeLapseOne = new Animation("C:/tlOne/GOPR4", 3);
+/** IMPORTANT RUN INFORMATION:
+the file tree needs to be designated fully "C:/tlOne/..etc"
+it CANNOT just be in the same sketch folder.Its a weird Processing bug
+**/
+
+
+Animation timeLapseOne = new Animation("C:/tlOne/GOPR4", 15);
 PImage img;                                  
 
 void setup(){
-  size(720, 1080);
+  size(1080, 720);
   frameRate(24); 
-  img = loadImage("GOPR4000.JPG");
+
 }
 
 
 void draw(){
   
-  image(img, 0 ,0);
  timeLapseOne.display(0,0);
 }
 
@@ -28,11 +32,12 @@ class Animation {
       // Use nf() to number format 'i' into four digits
       String filename = imagePrefix + nf(i, 3) + ".JPG";
       images[i] = loadImage(filename);
+      images[i].resize(720, 0 );
     }
   }
 
   void display(float xpos, float ypos) {
-    frame = (frame+1) % imageCount;
+    frame = (int)((float)mouseY/40*imageCount %imageCount);
     image(images[frame], xpos, ypos);
   }
   
@@ -40,6 +45,9 @@ class Animation {
     return images[0].width;
   }
 }
+
+
+
 
 
 
