@@ -7,7 +7,7 @@ public static final int SCROLLER_LENGTH = 500; //length in pixels of the mouse p
               // Very large values (>720) can leave empty frame and make it stutter
               // Small values ( ~<200) can cause the animation to reset very quickly and go too fast
 
-Animation timeLapseOne = new Animation("C:/tlOne/GOPR4", 15);
+Animation timeLapseOne = new Animation("/Users/theodiamandis/Documents/EE27N-Scroller/slideDemo/GOPR4", 15);
 PImage img;                                  
 
 void setup(){
@@ -48,9 +48,4 @@ class Animation {
     return images[0].width;
   }
 }
-
-
-
-
-
 
