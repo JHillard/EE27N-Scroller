@@ -1,0 +1,62 @@
+
+  int j = 0;        
+  int x = 600;      //x/y are for the size of the screen
+  int y = 320;
+  int time = millis();    //used in a timer - it allows for delay between interpolation
+  int wait = 500;
+  int s = 10;       //number of steps in interpolation
+  
+  
+void setup(){
+ 
+  size ( x, y);  
+}
+
+void draw(){
+  
+
+  int l = x*y;
+  PImage first;
+  PImage last;
+  
+    first = loadImage("ocean.jpeg");
+    first.resize(x, y);
+    last = loadImage ("forest.jpg");      //These are just two example images I used to demonstrate the principle.
+    last.resize(x, y);                    //Will be working to make it automatically take files
+
+    PImage step = createImage(first.width, first.height, RGB);
+        if(j <= s){
+        for (int m = 0; m < (first.width*first.height); m++){
+
+        first.loadPixels();
+        color a = first.pixels[m];
+        last.loadPixels();
+        color b = last.pixels[m];
+        float ab = blue (a);
+        float ag = green (a);
+        float ar = red (a);          //These floats get the r,g,b values from each of
+        float bb = blue (b);         //images to average.  I would prefer for lerpColor() to work.
+        float bg = green (b);
+        float br = red (b);
+        float bl = ((s-j)*ab + j*bb)/s;
+        float g = ((s-j)*ag + j*bg)/s;        //Basically works like a lerp() function.  Averages r,g,b values 
+        float r = ((s-j)*ar + j*br)/s;        //with the proper step
+        color paint = color(r, g, bl);
+        step.loadPixels();
+        step.pixels[m] = paint;  //update each of the pixels
+        step.updatePixels();
+  }  
+  image(step,0,0,x,y);
+  save("step" + j + ".jpg");        //saves interpolation images into the sketch's data folder
+  if(millis()-time >= wait){
+    j++;
+    time = millis();
+ }
+        }
+        if (j > s){
+          j = 0;
+        }
+}
+ 
+ 
+ 
