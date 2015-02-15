@@ -16,7 +16,7 @@ float lengthC;
 Animation timeLapseOne;
 Robot mouse;
 int dWheel;
-final int imgCount = 100;
+final int imgCount = 500;
 int time = millis();
 int scrollerLength; //length in pixels of the mouse path for the scroller.
               // Very large values (>720) can leave empty frame and make it stutter
@@ -42,11 +42,8 @@ void setup(){
       //  increments or decrements frame based on mouse wheel movement
       int newFrame;
       if (cal) {
-        newFrame = frame + (int)((float)evt.getWheelRotation()/scrollerLength*imgCount);
-      } else {
-        dWheel = evt.getWheelRotation();
-        newFrame = frame + dWheel;
-      }
+        newFrame = frame + (int)(evt.getWheelRotation());
+
       if (newFrame >=0 && newFrame < imgCount) {
         frame = newFrame;
       }
@@ -65,23 +62,6 @@ void setup(){
 //    println("robot not supported");
 //    exit();
 //  }
-
-}
-
-void calibrate() {
-    textSize(20);
-    fill(0, 10, 20);
-    text ("It is time to calibrate the scroller", 30, 30);
-    text ("Please scroll the length of the track.", 30, 50);
-    println("please calibrate");
-    while (frame < imgCount - 1) {
-        scrollerLength += dWheel;
-    }
-    text ("Success!", 30, 50);
-    println("Sucess!");
-    scrollerLength++;
-    cal = true;
-    frame = 0;
 
 }
 

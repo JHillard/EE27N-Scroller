@@ -18,24 +18,24 @@ int SCROLLER_LENGTH; //length in pixels of the mouse path for the scroller.
               // Very large values (>720) can leave empty frame and make it stutter
               // Small values ( ~<200) can cause the animation to reset very quickly and go too fast
 
-public void init() {
-    /// to make a frame not displayable, you can
-    // use frame.removeNotify()
-    frame.removeNotify(); 
-
-    frame.setUndecorated(true);
-
-    // addNotify, here i am not sure if you have
-    // to add notify again.
-    frame.addNotify();
-    super.init();
-}
+//public void init() {
+//    /// to make a frame not displayable, you can
+//    // use frame.removeNotify()
+//    frame.removeNotify(); 
+//
+//    frame.setUndecorated(true);
+//
+//    // addNotify, here i am not sure if you have
+//    // to add notify again.
+//    frame.addNotify();
+//    super.init();
+//}
 
 void setup(){
   String folderAddress = "/Users/theodiamandis/Documents/EE27N-Scroller/LargeTimeLapse/Images/";
   final int imgCount = 500;
   lengthC = .33;
-  SCROLLER_LENGTH = displayHeight;
+  SCROLLER_LENGTH = displayWidth;
   timeLapseOne = new Animation(folderAddress, imgCount);
   size(displayWidth, displayHeight);
   frameRate(24);
@@ -50,18 +50,18 @@ void setup(){
   //code for using mousewheel as input:
   // ---------------------------------------
   //MouseWheelListener calls mouseWheelMoved on mouse wheel movement
-  addMouseWheelListener(new MouseWheelListener() {
-    public void mouseWheelMoved(MouseWheelEvent evt)
-    {
-      //If not at the start or end of the timelapse, 
-      //  increments or decrements frame based on mouse wheel movement
-      int newFrame = frame + (int)lengthC*evt.getWheelRotation();
-      
-      if (newFrame >=0 && newFrame < imgCount) {
-        frame = newFrame;
-      }
-    }
-  });
+//  addMouseWheelListener(new MouseWheelListener() {
+//    public void mouseWheelMoved(MouseWheelEvent evt)
+//    {
+//      //If not at the start or end of the timelapse, 
+//      //  increments or decrements frame based on mouse wheel movement
+//      int newFrame = frame + (int)lengthC*evt.getWheelRotation();
+//      
+//      if (newFrame >=0 && newFrame < imgCount) {
+//        frame = newFrame;
+//      }
+//    }
+//  });
   
 }
 
@@ -111,9 +111,9 @@ class Animation {
     //Code for using ypos of mouse as input:
     //Uses only every 4th image, so frame is reduced to nearest mutliple of 4
     // ---------------------------------------
-//    frame = oldFrame + (int)((float)(lengthC*(mouseY - displayHeight/2))/SCROLLER_LENGTH*imageCount);
-//    if(frame < 0) frame = 0;
-//    if(frame >= imageCount) frame = imageCount-1;    
+    frame = oldFrame + (int)((float)(lengthC*(mouseX - displayWidth/2))/SCROLLER_LENGTH*imageCount);
+    if(frame < 0) frame = 0;
+    if(frame >= imageCount) frame = imageCount-1;    
     
 //    image(images[frame], displayWidth/2, displayHeight/2);
     pushMatrix();
