@@ -34,34 +34,33 @@ int SCROLLER_LENGTH; //length in pixels of the mouse path for the scroller.
 void setup(){
   String folderAddress = "/Users/theodiamandis/Documents/EE27N-Scroller/LargeTimeLapse/Images/";
   final int imgCount = 500;
-  lengthC = .33;
-  SCROLLER_LENGTH = displayWidth;
+  lengthC = .5;
+//  SCROLLER_LENGTH = displayWidth;
   timeLapseOne = new Animation(folderAddress, imgCount);
   size(displayWidth, displayHeight);
   frameRate(24);
-  try {
-    mouse = new Robot();
-  }
-  catch (AWTException e) {
-    println("robot not supported");
-    exit();
-  }
+//  try {
+//    mouse = new Robot();
+//  }
+//  catch (AWTException e) {
+//    println("robot not supported");
+//    exit();
+//  }
   
   //code for using mousewheel as input:
   // ---------------------------------------
   //MouseWheelListener calls mouseWheelMoved on mouse wheel movement
-//  addMouseWheelListener(new MouseWheelListener() {
-//    public void mouseWheelMoved(MouseWheelEvent evt)
-//    {
-//      //If not at the start or end of the timelapse, 
-//      //  increments or decrements frame based on mouse wheel movement
-//      int newFrame = frame + (int)lengthC*evt.getWheelRotation();
-//      
-//      if (newFrame >=0 && newFrame < imgCount) {
-//        frame = newFrame;
-//      }
-//    }
-//  });
+  addMouseWheelListener(new MouseWheelListener() {
+    public void mouseWheelMoved(MouseWheelEvent evt)
+    {
+      //If not at the start or end of the timelapse, 
+      //  increments or decrements frame based on mouse wheel movement
+      int newFrame = frame + (int)(lengthC*(int)evt.getWheelRotation());
+      if (newFrame >=0 && newFrame < imgCount) {
+        frame = newFrame;
+      }
+    }
+  });
   
 }
 
@@ -71,7 +70,7 @@ boolean sketchFullScreen() {
 
 void draw(){
  timeLapseOne.display();
- mouse.mouseMove(displayWidth/2, displayHeight/2);
+// mouse.mouseMove(displayWidth/2, displayHeight/2);
  noCursor();
 }
 
@@ -111,17 +110,17 @@ class Animation {
     //Code for using ypos of mouse as input:
     //Uses only every 4th image, so frame is reduced to nearest mutliple of 4
     // ---------------------------------------
-    frame = oldFrame + (int)((float)(lengthC*(mouseX - displayWidth/2))/SCROLLER_LENGTH*imageCount);
-    if(frame < 0) frame = 0;
-    if(frame >= imageCount) frame = imageCount-1;    
+//    frame = oldFrame + (int)((float)(lengthC*(mouseX - displayWidth/2))/SCROLLER_LENGTH*imageCount);
+//    if(frame < 0) frame = 0;
+//    if(frame >= imageCount) frame = imageCount-1;    
     
-//    image(images[frame], displayWidth/2, displayHeight/2);
-    pushMatrix();
-    translate(images[frame].width, 0);
-    scale(-1, 1);
     image(images[frame], 0, 0);
-    popMatrix();
-    oldFrame = frame;
+//    pushMatrix();
+//    translate(images[frame].width, 0);
+//    scale(-1, 1);
+//    image(images[frame], 0, 0);
+//    popMatrix();
+//    oldFrame = frame;
   }
   
 }
