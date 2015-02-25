@@ -1,8 +1,8 @@
 /*Sketch: LargeTimeLapse
- * Modified: Feb 2, 2015
+ * Modified: Feb 22, 2015
  * Implements a timelapse with mouse wheel input
  * IMPORTANT RUN INFORMATION: folderAddress (file tree) must be
- designated fully instead of relatively
+     designated fully instead of relatively
  */
 
 //import java.awt.event.*;
@@ -15,7 +15,11 @@ int currImg;
 float lengthC;
 Animation timeLapseOne;
 //Robot mouse;
-final int imgCount = 200;
+final int imgCount = 100;
+int displayWidth = 1000;
+int displayHeight = 1000;
+int xpos = 0;
+int ypos = 0;
 
 
 public void init() {
@@ -36,9 +40,9 @@ void setup() {
   lengthC = .5;
   //  SCROLLER_LENGTH = displayWidth;
   timeLapseOne = new Animation(folderAddress, imgCount);
+  frame.setLocation(xpos, ypos);
   size(displayWidth*2, displayHeight);
   frameRate(24);
-  stroke(0);
 }
 
 void mouseWheel(MouseEvent event) {
@@ -50,13 +54,12 @@ void mouseWheel(MouseEvent event) {
   }
 }
 
-
-boolean sketchFullScreen() {
-  return true;
-}
+//
+//boolean sketchFullScreen() {
+//  return true;
+//}
 
 void draw() {
-  frame.setLocation(0,0);
   timeLapseOne.display();
   // mouse.mouseMove(displayWidth/2, displayHeight/2);
   noCursor();
@@ -107,7 +110,7 @@ class Animation {
 //    pushMatrix();
 ////    translate(images[currImg].width, 0);
     scale(-1, 1);
-    image(images[currImg], -2*images[currImg].width, 0);
+    image(images[currImg], -2*displayWidth, 0);
 //    popMatrix();
     
   }
