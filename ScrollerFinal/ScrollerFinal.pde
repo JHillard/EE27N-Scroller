@@ -20,6 +20,7 @@ final int SCREEN_HEIGHT = 1080;
 ArrayList<ImageSet> imageSets;
 int time;
 Movie credits;
+boolean setup = false;
 
 
 
@@ -36,23 +37,15 @@ void setup() {
   //Stores all needed information about each image set
   imageSets = new ArrayList<ImageSet>();
   imageSets.add(new ImageSet("palwide", "jpg", 539));
-  imageSets.add(new ImageSet("IM-0001-", "jpg", 96));
+  imageSets.add(new ImageSet("IM-0001-", "jpg", 696));
   credits = new Movie(this, "credits.MOV");
   
-  //Creates scroller using imageSet picked by user
-  ImageSet imgs = imageSets.get(getImageSetNumFromUser());
-  scroller = new Scroller(imgs.getPrefix(), imgs.getExtension(), 
-                            imgs.getImageCount(), SCREEN_WIDTH, SCREEN_HEIGHT);
-  
-  //Gets calibration distance from user for linear map constant
-  lengthConst = (double)(scroller.getImageCount() - 1)/calibrateSliderDistance();
-    
   //stretches frame across the second and third monitor
   size(SCREEN_WIDTH*2, SCREEN_HEIGHT);
   frameRate(24);
   background(0);
 
-  //Creates mouse robot that prevents user from moving mouse offscreen
+  //Creates mouse robot that provides methods to prevents user from moving mouse offscreen
    try {
       mouse = new Robot();
    } catch (AWTException e) {
@@ -100,12 +93,24 @@ void movieEvent(Movie m) {
 }
 
 void draw() {
-  //black background
+  if(!setup) {
+    //Creates scroller using imageSet picked by user
+    ImageSet imgs = imageSets.get(getImageSetNumFromUser());
+    scroller = new Scroller(imgs.getPrefix(), imgs.getExtension(), 
+                              imgs.getImageCount(), SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    //Gets calibration distance from user for linear map constant
+    lengthConst = (double)(scroller.getImageCount() - 1)/calibrateSliderDistance();
+    setup = true;
+    
+  } else {
+      //black background
   noTint();
   background(0);
   
   //Puts frame on the second monitor
   //Displays across 2nd and 3rd monitors
+  //NOTE: Assumes 2nd and 3rd monitors are to the RIGHT of the primary one
   frame.setLocation(displayWidth, 0);
   scroller.display();
   
@@ -114,6 +119,7 @@ void draw() {
   
   //Prevent the user from moving mouse off applet
 //  mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+  }
 }
 
 
