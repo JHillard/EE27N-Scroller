@@ -63,11 +63,13 @@ void setup() {
 }
 
 //TODO: Jake
+//returns an integer between 0 and imageSets.size() - 1 that is the index of the image set selected by the user
 int getImageSetNumFromUser() {
   return 1;
 }
 
 //TODO: Mirae
+//returns the length of the slider
 int calibrateSliderDistance() {
   return 1000;
 }
