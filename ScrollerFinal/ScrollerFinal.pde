@@ -15,7 +15,7 @@ double lengthConst;
 int position;
 Scroller scroller;
 Robot mouse;
-final int SCREEN_WIDTH = 1920; //These refer to screens used for physical scroller
+final int SCREEN_WIDTH = 1920; //These refer to the 2 screens used for physical scroller
 final int SCREEN_HEIGHT = 1080;
 ArrayList<ImageSet> imageSets;
 int time;
@@ -27,7 +27,7 @@ Movie credits;
 //  stretch across two screens.
 public void init() {
   frame.removeNotify(); 
-  frame.setUndecorated(true);
+  frame.setUndecorated(true); //Takes top bar off frame for fullscreen effect
   frame.addNotify();
   super.init();
 }
@@ -36,7 +36,7 @@ void setup() {
   //Stores all needed information about each image set
   imageSets = new ArrayList<ImageSet>();
   imageSets.add(new ImageSet("palwide", "jpg", 539));
-  imageSets.add(new ImageSet("IM-0001-", "jpg", 696));
+  imageSets.add(new ImageSet("IM-0001-", "jpg", 96));
   credits = new Movie(this, "credits.MOV");
   
   //Creates scroller using imageSet picked by user
@@ -50,6 +50,7 @@ void setup() {
   //stretches frame across the second and third monitor
   size(SCREEN_WIDTH*2, SCREEN_HEIGHT);
   frameRate(24);
+  background(0);
 
   //Creates mouse robot that prevents user from moving mouse offscreen
    try {
@@ -97,12 +98,19 @@ void movieEvent(Movie m) {
 }
 
 void draw() {
+  //black background
+  noTint();
+  background(0);
+  
   //Puts frame on the second monitor
+  //Displays across 2nd and 3rd monitors
   frame.setLocation(displayWidth, 0);
   scroller.display();
+  
+  //hides cursor
   noCursor();
-
-  //Uncomment the following line to prevent the user from messing with the mouse position
+  
+  //Prevent the user from moving mouse off applet
 //  mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 }
 
@@ -114,9 +122,11 @@ void draw() {
 class Scroller {
   PImage[] images;
   int imageCount;
-  int wait = 60000;
+  int wait = 60000; //credits appear after 60s of inactivity
   int sWidth;
   int sHeight;
+  int xOff;
+  int yOff;
 
   /*constructor: Scroller
    * Preconditions: images are stored in the form "prefix####extension"
@@ -131,11 +141,27 @@ class Scroller {
     this.sHeight = sHeight;
     
     //Preloads each image
-    for (int i = 0; i < imageCount; i++) {
+    boolean firstPic = true;
+    int xSize = 0;
+    int ySize = 0;
+    for(int i = 0; i < imageCount; i++) {
       // Use nf() to number format 'i' into four digits
       String filename =  imagePrefix + nf(i+1, 4) + extension;
       images[i] = loadImage(filename);
-      images[i].resize(sWidth, sHeight);  
+      
+      //Calbirates appropriate scale factor from the first picture
+      if(firstPic) {
+        //scales 1st image appropriately 
+        calibrateScaling(images[i]);
+        
+        //uses 1st image's demensions as resize parameters for others
+        xSize = images[i].width;
+        ySize = images[i].height;
+        firstPic = false;
+      } else {
+        //Called after initial scaling calibration
+        images[i].resize(xSize, ySize);
+      }  
     }
     
   }
@@ -146,38 +172,72 @@ class Scroller {
    * SHOULD WE PASS currFrame?? -- I don't really know the convention for classes within classes
    */
   void display() {    
-    
-    //If user has not taken action for wait milliseconds, overlays credits on image
+        //If user has not taken action for wait milliseconds, overlays credits on image
     if(millis()- time >= wait) {
       credits.loop();
+      tint(255, 50);
       image(credits, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-      tint(255, 50);
       image(credits, SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-      tint(255, 50);
+      g.removeCache(credits);
     } else {
       credits.pause();
-    }
+    }    
     
     //Displays image and its mirror image on screens 2 and 3 respectively
-    image(images[currFrame], 0, 0);
+    image(images[currFrame], xOff, yOff);
     scale(-1, 1);
-    image(images[currFrame], -2*SCREEN_WIDTH, 0);
+    image(images[currFrame], -2*SCREEN_WIDTH + xOff, yOff);
     
     //Clears the current image from the cache to avoid a memory leak
     //Processing loads a PImage into the cache each time it is called, so not clearing
     //  would inevitably cause the user to run out of memory upon continued use.
     g.removeCache(images[currFrame]);
     
+
   }
   
-  /*getImageCount()
+  /*method: getImageCount()
    * returns the number of images in the used image set
    */
   int getImageCount() {
     return imageCount;
   }
   
+  /*method: calibrateScaling
+   * Appropriately scales and centers img according to the dimensions of sWidth and sHeight
+   */
+  private void calibrateScaling(PImage img) {
+    int xSize = 0;
+    int ySize = 0;
+    if (img.width == sWidth && img.height == sHeight) {
+      //Already fits screen; no need to resize or center
+      xOff = 0;
+      yOff = 0;
+    } else if((double)img.width/img.height >= (double)sWidth/sHeight) {
+      //if the image width to height ratio is greater than the screen's
+      // width is scaled to fill screen and the height is scaled proportionally
+      xSize = sWidth;
+      ySize = 0;
+      img.resize(xSize, ySize);
+      
+      //centers the image vertically
+      yOff = (sHeight - img.height)/2;
+      xOff = 0;
+    } else {
+      //otherwise, scales height to fill and width proportionally
+      xSize = 0;
+      ySize = sHeight;
+      img.resize(xSize, ySize);
+      
+      //centers image horizontally
+      xOff = (sWidth - img.width)/2;
+      yOff = 0;
+    }
+  }
+  
 }
+
+
 
 /*class: ImageSet
  * Provides a convenient structure for storing information about image sets
