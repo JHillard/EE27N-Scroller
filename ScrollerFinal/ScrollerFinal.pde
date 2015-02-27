@@ -21,6 +21,7 @@ ArrayList<ImageSet> imageSets;
 int time;
 Movie credits;
 boolean setup = false;
+boolean calibrated = false;
 
 
 
@@ -39,6 +40,7 @@ void setup() {
   imageSets.add(new ImageSet("palwide", "jpg", 539));
   imageSets.add(new ImageSet("IM-0001-", "jpg", 696));
   credits = new Movie(this, "credits.MOV");
+  position = 0;
   
   //stretches frame across the second and third monitor
   size(SCREEN_WIDTH*2, SCREEN_HEIGHT);
@@ -61,10 +63,22 @@ int getImageSetNumFromUser() {
   return 1;
 }
 
-//TODO: Mirae
-//returns the length of the slider
-int calibrateSliderDistance() {
-  return 1000;
+/*method: calibrateSliderDistance
+ * Sets lengthConst to appropriate value for linear map from the slider position to currFrame
+ * Only called during calibration section of draw
+ */
+void calibrateSliderDistance() {
+  int distance;
+  int waitC = 3000;
+  if ((millis()-time > waitC) && (abs(position) > 1)){
+    distance = abs(position);
+    text ("Distance is: " + distance, 60, 120);
+    lengthConst = (double)(scroller.getImageCount() - 1)/distance;
+    calibrated = true;
+  } else {
+    distance = abs(position);
+    text ("Distance is: " + distance, 60, 120);
+  }
 }
 
 /*method: mouseWheel(MouseEvent event)
@@ -75,13 +89,16 @@ void mouseWheel(MouseEvent event) {
   
   //Linear map from position on physical slider to frame number
   position += event.getAmount();
-  int newFrame = (int)(position * lengthConst);
+  time = millis();
   
-  //checks bounds
-  //resets time if moved
-  if (newFrame >=0 && newFrame < scroller.getImageCount()) {
-    currFrame = newFrame;
-    time = millis();
+  if (calibrated) {
+    int newFrame = (int)(position * lengthConst);
+    
+    //checks bounds
+    //resets time if moved
+    if (newFrame >=0 && newFrame < scroller.getImageCount()) {
+      currFrame = newFrame;
+    }
   }
 }
 
@@ -94,31 +111,42 @@ void movieEvent(Movie m) {
 
 void draw() {
   if(!setup) {
+    frame.setLocation(0, 0);
+
     //Creates scroller using imageSet picked by user
     ImageSet imgs = imageSets.get(getImageSetNumFromUser());
     scroller = new Scroller(imgs.getPrefix(), imgs.getExtension(), 
                               imgs.getImageCount(), SCREEN_WIDTH, SCREEN_HEIGHT);
-    
+     setup = true;
+     
+  } else if (!calibrated) {
     //Gets calibration distance from user for linear map constant
-    lengthConst = (double)(scroller.getImageCount() - 1)/calibrateSliderDistance();
-    setup = true;
+    frame.setLocation(0, 0);
+    background (100);
+    textSize(20);
+    fill (0, 10, 20) ;
+    text ("Please calibrate the scroller", 30, 30);
+    text ("Scroll the length of the track.", 30, 50);
+    text ("Hold scroller in place for", 40, 70);
+    text ("3 seconds after you are done", 40, 90);
+    calibrateSliderDistance();
     
   } else {
-      //black background
-  noTint();
-  background(0);
-  
-  //Puts frame on the second monitor
-  //Displays across 2nd and 3rd monitors
-  //NOTE: Assumes 2nd and 3rd monitors are to the RIGHT of the primary one
-  frame.setLocation(displayWidth, 0);
-  scroller.display();
-  
-  //hides cursor
-  noCursor();
-  
-  //Prevent the user from moving mouse off applet
-//  mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+    //black background
+    noTint();
+    background(0);
+    
+    //Puts frame on the second monitor
+    //Displays across 2nd and 3rd monitors
+    //NOTE: Assumes 2nd and 3rd monitors are to the RIGHT of the primary one
+    frame.setLocation(0, 0);
+    scroller.display();
+    
+    //hides cursor
+    noCursor();
+    
+    //Prevent the user from moving mouse off applet
+//    mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
   }
 }
 
