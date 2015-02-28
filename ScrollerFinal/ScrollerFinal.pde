@@ -16,14 +16,13 @@ int position;
 Scroller scroller;
 Robot mouse;
 /*Jake EDIT: allows for single screen testing */
-final int SCREEN_WIDTH = 1366; //These refer to the 2 screens used for physical scroller
-final int SCREEN_HEIGHT = 768;
-int uiMode = 0;
+final int SCREEN_WIDTH = 1920; //These refer to the 2 screens used for physical scroller
+final int SCREEN_HEIGHT = 1080;
+int uiMode;
 ArrayList<ImageSet> imageSets;
 int time;
 Movie credits;
 //vvv  All initialization vars for Initial menu  vvv
-final int imageSetQuantity = 2;
 final int selectTime = 5000; //time user must hover over image card
 final int idleTime = 300;
 final int cardSize = 400;
@@ -35,6 +34,7 @@ boolean firstMoved = false;
 PImage menuImg;
 String menuImgName = "MenuBackground-01.png";
 PImage[] menuCard;
+int distance;
 
 
 //Overrides default frame settings to allow the frame to
@@ -67,20 +67,14 @@ void setup() {
       exit();
   }
   
-menuCard = new PImage[imageSetQuantity]; //creates array of images to display for image sets
-menuImg = loadImage(menuImgName);
-menuImg.resize(1366, 0);
-menuCard[0] = loadImage("IM-0001-0218.jpg");
-menuCard[1] = loadImage("palwide0039.jpg");  //needs to be done manually for now. Defines images to use for Set Selection
-menuCard[0].resize(300, 0);
-menuCard[1].resize(300, 0);
-}
-
-
-//TODO: Mirae
-//returns the length of the slider
-int calibrateSliderDistance() {
-  return 1000;
+  uiMode = -1;
+  menuCard = new PImage[imageSets.size()]; //creates array of images to display for image sets
+  menuImg = loadImage(menuImgName);
+  menuImg.resize(SCREEN_WIDTH, 0);
+  for (int i = 0; i < menuCard.length; i++) {
+    menuCard[i] = imageSets.get(i).getMenuCard();
+  }
+  
 }
 
 /*method: mouseWheel(MouseEvent event)
@@ -92,15 +86,16 @@ void mouseWheel(MouseEvent event) {
   //Linear map from position on physical slider to frame number
   position += event.getAmount();
   int newFrame = (int)(position * lengthConst);
-  if(uiMode ==0){
-    time = millis(); //resets time if moved
+  time = millis();
+
+  if(uiMode == 0){
     firstMoved =true;
   }  
   if(uiMode == 2){
-  if (newFrame >=0 && newFrame < scroller.getImageCount()) { //checks bounds
-    currFrame = newFrame;
-    time = millis(); //resets time if moved
-  }
+    if (newFrame >=0 && newFrame < scroller.getImageCount()) { //checks bounds
+      currFrame = newFrame;
+      time = millis(); //resets time if moved
+    }
   }
 }
 
@@ -111,111 +106,133 @@ void movieEvent(Movie m) {
     m.read();
 }
 
+/*method: calibrateSliderDistance
+ * Sets lengthConst to appropriate value for linear map from the slider position to currFrame
+ * Only called during calibration section of draw
+ */
+void calibrateSliderDistance() {
+  int distance;
+  int waitC = 3000;
+  int xpos =  SCREEN_WIDTH/2;
+  int ypos = SCREEN_HEIGHT/2;
+  int lineSpace = 50;
+  
+  frame.setLocation(displayWidth, 0);
+  background (100);
+  textSize(lineSpace - 10);
+  fill (0, 10, 20) ;
+  text ("Please calibrate the scroller", xpos, ypos - 2*lineSpace);
+  text ("Scroll the length of the track.", xpos, ypos - lineSpace);
+  text ("Hold scroller in place for", xpos, ypos);
+  text ("3 seconds after you are done", xpos, ypos + lineSpace);
+  text ("Please calibrate the scroller", xpos + SCREEN_WIDTH, ypos - 2*lineSpace);
+  text ("Scroll the length of the track.", xpos + SCREEN_WIDTH, ypos - lineSpace);
+  text ("Hold scroller in place for", xpos + SCREEN_WIDTH, ypos);
+  text ("3 seconds after you are done", xpos + SCREEN_WIDTH, ypos + lineSpace);
+  
+  if ((millis()-time > waitC) && (abs(position) > 1)){
+    distance = abs(position);
+//    text ("Distance is: " + distance, xpos, 120);
+  } else {
+    text ("Distance is: " + abs(position), xpos, ypos + 2*lineSpace);
+    text ("Distance is: " + abs(position), xpos + SCREEN_WIDTH, ypos + 2*lineSpace);
+  }
+}
+
 //TODO: Jake
 //returns an integer between 0 and imageSets.size() - 1 that is the index of the image set selected by the user
 //_______________________________________MENU UI_______________________________________________________________________
 void menu(){
-   frame.setLocation(0, 0);
-   menuBackground();
-   updateCardPlacement(); 
-   setSelection();
-   
-   g.removeCache(menuImg);
-   g.removeCache(menuCard[0]);
-   g.removeCache(menuCard[1]);
-     //Clears the current image from the cache to avoid a memory leak
-    //Processing loads a PImage into the cache each time it is called, so not clearing
-    //  would inevitably cause the user to run out of memory upon continued use.
+  int menuSensitivity = 17;
+  int radius = 1000;
+  
+  //background
+  frame.setLocation(displayWidth, 0);
+  image(menuImg, 0, 0);
+  image(menuImg, SCREEN_WIDTH + 0, 0);
+  
+  //Positions the cards
+  int[] cardY = new int[menuCard.length];
+  cardY[0] = position*menuSensitivity - 150;
+  for (int i = 1; i < cardY.length; i++) {
+    cardY[i] = cardY[i-1] + cardSpacing;
+  }
+  
+  //Updates card placement
+  for (int i = 0; i < cardY.length; i++) {
+    image(menuCard[i], SCREEN_WIDTH*2/3 + menuCard[0].width/2 + radius - (int)sqrt(radius*radius - cardY[i]*cardY[i]), SCREEN_HEIGHT/2 + cardY[i] - menuCard[i].height/2); 
+    image(menuCard[i], SCREEN_WIDTH*5/3 + menuCard[0].width/2 + radius - (int)sqrt(radius*radius - cardY[i]*cardY[i]), SCREEN_HEIGHT/2 + cardY[i] - menuCard[i].height/2); 
+  }
+  
+  //Selects card
+  setSelection(menuSensitivity, cardY); 
+  g.removeCache(menuImg);
+  g.removeCache(menuCard[0]);
+  g.removeCache(menuCard[1]);
+  //Clears the current image from the cache to avoid a memory leak
+  //Processing loads a PImage into the cache each time it is called, so not clearing
+  //  would inevitably cause the user to run out of memory upon continued use.
+  
 }
-void menuBackground(){
-    //Displays image and its mirror image on screens 2 and 3 respectively
-    image(menuImg, 0, 0);
-    scale(-1, 1);
-    image(menuImg, -2*SCREEN_WIDTH + 0, 0);
-}
-void updateCardPlacement(){
-    int menuSensitivity =17;    
-    int radius = 1000;
-    int card1Y = position*menuSensitivity -150;
-    int card2Y = card1Y + cardSpacing;
-    int circleModifier1 = (int) sqrt( radius*radius -card1Y*card1Y);
-    int circleModifier2 = (int) sqrt( radius*radius -card2Y*card2Y);
-   image( menuCard[0], -SCREEN_WIDTH *2/3 - menuCard[0].width/2 - radius + circleModifier1, SCREEN_HEIGHT/2 + card1Y - menuCard[0].height/2);
-   image( menuCard[1], -SCREEN_WIDTH *2/3 - menuCard[0].width/2 - radius + circleModifier2, SCREEN_HEIGHT/2 + card2Y - menuCard[1].height/2);
-   
-}
-void setSelection(){ 
-  if(firstMoved){
-      int cardChoice = -1;
-      int menuSensitivity =17; 
-      int card1Y = position*menuSensitivity -150;
-      int card2Y = card1Y + cardSpacing;
-      println("Y " + card1Y);
-      println("Y2 " + card2Y);
-    if(millis()-time >= idleTime){  
-        if(sqrt(card1Y*card1Y) <= menuCard[0].height*3/5){
-            cardChoice = 0;
-          }
-      if(sqrt(card2Y*card2Y) <= menuCard[1].height*3/5){
-          cardChoice = 1;   
-          }
-      if(cardChoice != -1){
-           textSize(100); 
-           fill(0, 102, 153);
-           textAlign(CENTER, CENTER);
-           text((int)(selectTime - millis()+ time )/100, -1260, 360);    
-        }
-      if(millis()- time >= selectTime) {
-        cardSelection = cardChoice;
-        uiMode =1;
-        textSize(50); 
-         fill(0, 102, 153);
-         textAlign(CENTER, CENTER);
-         text("Please wait while images Render...", -SCREEN_WIDTH/2, 360);    
+
+void setSelection(int menuSensitivity, int[] cardY){ 
+  int cardChoice = -1;
+  if(firstMoved && millis()-time >= idleTime){
+    for (int i = 0; i < menuCard.length; i++) {
+      if (cardY[i] <= menuCard[i].height*3/5) {
+       cardChoice = i;
+      } 
+    }
+    if(cardChoice != -1){
+      textSize(100); 
+      fill(0, 102, 153);
+      textAlign(CENTER, CENTER);
+      int currTime = (int)(selectTime - millis()+ time )/100;
+      if(currTime > 0) {
+        text((int)currTime, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50); 
+        text((int)currTime, SCREEN_WIDTH*3/2, SCREEN_HEIGHT/2 + 50); 
       }  
     }
+    if(millis()- time >= selectTime) {
+      cardSelection = cardChoice;
+      uiMode = 1;
+      textSize(50); 
+      fill(0, 102, 153);
+      textAlign(CENTER, CENTER);
+      text("Please wait while images Render...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
+      text("Please wait while images Render...", SCREEN_WIDTH*3/2, SCREEN_HEIGHT/2 + 50);    
+    }  
   }  
 }
 //_____________________________________________________END MENU_____________________________________________________________
 
 void imgSetInitialization(){
-     
   ImageSet imgs = imageSets.get(cardSelection);
         scroller = new Scroller(imgs.getPrefix(), imgs.getExtension(), 
                                 imgs.getImageCount(), SCREEN_WIDTH, SCREEN_HEIGHT);
-    
-        //Gets calibration distance from user for linear map constant
-        lengthConst = (double)(scroller.getImageCount() - 1)/calibrateSliderDistance();
-        setup = true; 
-   
-       
+   lengthConst = (double)(scroller.getImageCount() - 1)/distance;
    uiMode = 2;     
 }
+
 void scrollerMain(){
-        //black background
+  //black background
   noTint();
   background(0);
   
   //Puts frame on the second monitor
   //Displays across 2nd and 3rd monitors
-  //NOTE: Assumes 2nd and 3rd monitors are to the RIGHT of the primary one
-  
-  /*Jake Edit: frame.setLocation(displayWidth, 0); Makes it so I can use just two monitors   */
-  frame.setLocation(0, 0);
+  //NOTE: Assumes 2nd and 3rd monitors are to the RIGHT of the primary one 
+  frame.setLocation(displayWidth, 0);
   scroller.display();
-  
-  //hides cursor
-  noCursor();
-  
-  //Prevent the user from moving mouse off applet
-//  mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);  
 }
 
 
 void draw() {
   
   switch(uiMode){
-    
+    case -1:
+       calibrateSliderDistance();
+       break;
     case 0:
        menu();
        break;
@@ -225,8 +242,16 @@ void draw() {
     case 2:
        scrollerMain();
        break;
-  }   
+  }
+
+  //hides cursor
+  noCursor();
+  
+  //Prevent the user from moving mouse off applet
+  //mouse.mouseMove(displayWidth + SCREEN_WIDTH/2, SCREEN_HEIGHT/2);  
 }
+
+
 
 
 
@@ -361,6 +386,7 @@ class ImageSet {
   String prefix;
   String extension;
   int imageCount;
+  PImage menuCard;
   
   /*constructor: ImageSet
    * sets data from user input
@@ -375,6 +401,10 @@ class ImageSet {
     } else {
       this.extension = extension;
     }
+    
+    //menuCard
+    menuCard = loadImage(prefix + nf(imageCount/2, 4) + this.extension);
+    menuCard.resize(300, 0);
   }
   
   //Getters
@@ -389,6 +419,10 @@ class ImageSet {
   
   int getImageCount() {
     return imageCount; 
+  }
+  
+  PImage getMenuCard() {
+    return menuCard;
   }
   
 }
