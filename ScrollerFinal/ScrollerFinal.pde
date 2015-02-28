@@ -121,6 +121,7 @@ void calibrateSliderDistance() {
   background (100);
   textSize(lineSpace - 10);
   fill (0, 10, 20) ;
+  textAlign(CENTER, CENTER);
   text ("Please calibrate the scroller", xpos, ypos - 2*lineSpace);
   text ("Scroll the length of the track.", xpos, ypos - lineSpace);
   text ("Hold scroller in place for", xpos, ypos);
@@ -132,10 +133,13 @@ void calibrateSliderDistance() {
   
   if ((millis()-time > waitC) && (abs(position) > 1)){
     distance = abs(position);
-//    text ("Distance is: " + distance, xpos, 120);
+    uiMode = 0;
   } else {
-    text ("Distance is: " + abs(position), xpos, ypos + 2*lineSpace);
-    text ("Distance is: " + abs(position), xpos + SCREEN_WIDTH, ypos + 2*lineSpace);
+    int currTime = (int)(waitC - millis() + time )/100;
+    if (currTime <= 0) currTime = 0;
+    
+    text ("Distance will be: " + abs(position) + " in " + currTime, xpos, ypos + 2*lineSpace);
+    text ("Distance will be: " + abs(position) + " in " + currTime, xpos + SCREEN_WIDTH, ypos + 2*lineSpace);
   }
 }
 
