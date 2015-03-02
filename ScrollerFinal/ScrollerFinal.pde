@@ -3,7 +3,6 @@
  * Implements a image scroller with mouse wheel input
  */
 
-//import java.awt.event.*;
 import java.awt.Robot;
 import java.awt.*;
 import javax.swing.*;
@@ -35,6 +34,8 @@ PImage menuImg;
 String menuImgName = "MenuBackground-01.png";
 PImage[] menuCard;
 int distance;
+PImage calImage;
+String calImageName = "calibrationScreen.png";
 
 
 //Overrides default frame settings to allow the frame to
@@ -48,11 +49,23 @@ public void init() {
 }
 
 void setup() {
-  //Stores all needed information about each image set
+  //Image set setup
   imageSets = new ArrayList<ImageSet>();  
   imageSets.add(new ImageSet("IM-0001-", "jpg", 696));
   imageSets.add(new ImageSet("palwide", "jpg", 539));
-  credits = new Movie(this, "credits.MOV");
+  credits = new Movie(this, "credits.mp4");
+  
+  //menu setup
+  menuCard = new PImage[imageSets.size()]; //creates array of images to display for image sets
+  menuImg = loadImage(menuImgName);
+  menuImg.resize(SCREEN_WIDTH, 0);
+  for (int i = 0; i < menuCard.length; i++) {
+    menuCard[i] = imageSets.get(i).getMenuCard();
+  }
+  
+  //Starts UI At calibration screen
+  uiMode = -1;
+  calImage = loadImage(calImageName);
   
   //stretches frame across the second and third monitor
   size(SCREEN_WIDTH*2, SCREEN_HEIGHT);
@@ -66,15 +79,6 @@ void setup() {
       println("robot not supported");
       exit();
   }
-  
-  uiMode = -1;
-  menuCard = new PImage[imageSets.size()]; //creates array of images to display for image sets
-  menuImg = loadImage(menuImgName);
-  menuImg.resize(SCREEN_WIDTH, 0);
-  for (int i = 0; i < menuCard.length; i++) {
-    menuCard[i] = imageSets.get(i).getMenuCard();
-  }
-  
 }
 
 /*method: mouseWheel(MouseEvent event)
@@ -85,13 +89,13 @@ void mouseWheel(MouseEvent event) {
   
   //Linear map from position on physical slider to frame number
   position += event.getAmount();
-  int newFrame = (int)(position * lengthConst);
   time = millis();
 
   if(uiMode == 0){
     firstMoved =true;
   }  
   if(uiMode == 2){
+    int newFrame = (int)(position * lengthConst);
     if (newFrame >=0 && newFrame < scroller.getImageCount()) { //checks bounds
       currFrame = newFrame;
       time = millis(); //resets time if moved
@@ -113,41 +117,33 @@ void movieEvent(Movie m) {
 void calibrateSliderDistance() {
   int distance;
   int waitC = 3000;
-  int xpos =  SCREEN_WIDTH/2;
-  int ypos = SCREEN_HEIGHT/2;
-  int lineSpace = 50;
   
+  //displays background
   frame.setLocation(displayWidth, 0);
-  background (100);
-  textSize(lineSpace - 10);
-  fill (0, 10, 20) ;
-  textAlign(CENTER, CENTER);
-  text ("Please calibrate the scroller", xpos, ypos - 2*lineSpace);
-  text ("Scroll the length of the track.", xpos, ypos - lineSpace);
-  text ("Hold scroller in place for", xpos, ypos);
-  text ("3 seconds after you are done", xpos, ypos + lineSpace);
-  text ("Please calibrate the scroller", xpos + SCREEN_WIDTH, ypos - 2*lineSpace);
-  text ("Scroll the length of the track.", xpos + SCREEN_WIDTH, ypos - lineSpace);
-  text ("Hold scroller in place for", xpos + SCREEN_WIDTH, ypos);
-  text ("3 seconds after you are done", xpos + SCREEN_WIDTH, ypos + lineSpace);
+  image(calImage, 0, 0);
+  image(calImage, SCREEN_WIDTH, 0);
   
   if ((millis()-time > waitC) && (abs(position) > 1)){
+    //Once calibrated, sets distance and switches to menu uiMode
     distance = abs(position);
     uiMode = 0;
   } else {
+    //Counts down until calibration confirmation
     int currTime = (int)(waitC - millis() + time )/100;
-    if (currTime <= 0) currTime = 0;
-    
-    text ("Distance will be: " + abs(position) + " in " + currTime, xpos, ypos + 2*lineSpace);
-    text ("Distance will be: " + abs(position) + " in " + currTime, xpos + SCREEN_WIDTH, ypos + 2*lineSpace);
+    if (currTime >= 0) {
+      textSize(70);
+      text (currTime, SCREEN_WIDTH*5/8, SCREEN_HEIGHT*3/4);
+      text (currTime, SCREEN_WIDTH*13/8, SCREEN_HEIGHT*3/4);
+    }
   }
 }
 
-//TODO: Jake
-//returns an integer between 0 and imageSets.size() - 1 that is the index of the image set selected by the user
-//_______________________________________MENU UI_______________________________________________________________________
+/*method: menu
+ * Draws and updates menu
+ * Only called during menu section of draw
+ */
 void menu(){
-  int menuSensitivity = 17;
+  int menuSensitivity = 4;
   int radius = 1000;
   
   //background
@@ -155,7 +151,7 @@ void menu(){
   image(menuImg, 0, 0);
   image(menuImg, SCREEN_WIDTH + 0, 0);
   
-  //Positions the cards
+  //Holds y positions of cards
   int[] cardY = new int[menuCard.length];
   cardY[0] = position*menuSensitivity - 150;
   for (int i = 1; i < cardY.length; i++) {
@@ -170,46 +166,64 @@ void menu(){
   
   //Selects card
   setSelection(menuSensitivity, cardY); 
-  g.removeCache(menuImg);
-  g.removeCache(menuCard[0]);
-  g.removeCache(menuCard[1]);
+  
   //Clears the current image from the cache to avoid a memory leak
   //Processing loads a PImage into the cache each time it is called, so not clearing
   //  would inevitably cause the user to run out of memory upon continued use.
+  g.removeCache(menuImg);
+  g.removeCache(menuCard[0]);
+  g.removeCache(menuCard[1]);
   
 }
 
+/*method: setSelection
+ * Handles choosing of menu
+ * Helper for menu method
+ */
 void setSelection(int menuSensitivity, int[] cardY){ 
+  //Does not start selection unless moved and user has spent sufficient time on their choice
   int cardChoice = -1;
   if(firstMoved && millis()-time >= idleTime){
+    //Selects card i if sufficiently on selector area
     for (int i = 0; i < menuCard.length; i++) {
       if (cardY[i] <= menuCard[i].height*3/5) {
        cardChoice = i;
       } 
     }
+    
+    //If selection has been made:
     if(cardChoice != -1){
       textSize(100); 
       fill(0, 102, 153);
       textAlign(CENTER, CENTER);
+      
+      //Tells user how much time until selection is confirmed
       int currTime = (int)(selectTime - millis()+ time )/100;
       if(currTime > 0) {
         text((int)currTime, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50); 
         text((int)currTime, SCREEN_WIDTH*3/2, SCREEN_HEIGHT/2 + 50); 
       }  
     }
+    
+    //If selection has been confirmed:
     if(millis()- time >= selectTime) {
+      //Switches uiMode to image initialization
       cardSelection = cardChoice;
       uiMode = 1;
+      
+      //Displays message to user
       textSize(50); 
       fill(0, 102, 153);
-      textAlign(CENTER, CENTER);
-      text("Please wait while images Render...", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 50);
-      text("Please wait while images Render...", SCREEN_WIDTH*3/2, SCREEN_HEIGHT/2 + 50);    
+      textAlign(LEFT, CENTER);
+      text("Please move slider back to start while images Render...", 100, SCREEN_HEIGHT/2 + 50);
+      text("Please move slider back to start while images Render...", SCREEN_WIDTH + 100, SCREEN_HEIGHT/2 + 50);    
     }  
   }  
 }
-//_____________________________________________________END MENU_____________________________________________________________
 
+/*method imgSetInitialization
+ * Creates scroller object
+ */
 void imgSetInitialization(){
   ImageSet imgs = imageSets.get(cardSelection);
         scroller = new Scroller(imgs.getPrefix(), imgs.getExtension(), 
@@ -218,6 +232,9 @@ void imgSetInitialization(){
    uiMode = 2;     
 }
 
+/*method scrollerMain
+ * Displays the imageSet using the scroller object
+ */
 void scrollerMain(){
   //black background
   noTint();
@@ -232,7 +249,6 @@ void scrollerMain(){
 
 
 void draw() {
-  
   switch(uiMode){
     case -1:
        calibrateSliderDistance();
@@ -379,6 +395,7 @@ class Scroller {
   }
   
 }
+
 
 
 
